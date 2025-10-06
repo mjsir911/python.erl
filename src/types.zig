@@ -4,6 +4,7 @@ const c = @cImport({
     @cInclude("erl_nif.h");
     @cInclude("Python.h");
     @cInclude("marshal.h");
+    @cInclude("dlfcn.h");
 });
 
 const NifEnv = ?*c.ErlNifEnv;
@@ -36,11 +37,11 @@ pub fn erl_term_to_py_obj(env: NifEnv, term: NifTerm) !PyObject {
         }
     }
 
-    var string_val: [256]u8 = undefined;
-    const string_len = c.enif_get_string(env, term, &string_val, string_val.len, c.ERL_NIF_UTF8);
-    if (string_len > 0) {
-        return c.PyUnicode_FromStringAndSize(&string_val[0], @intCast(string_len - 1)); // the minus one lmao
-    }
+    // var string_val: [256]u8 = undefined;
+    // const string_len = c.enif_get_string(env, term, &string_val, string_val.len, c.ERL_NIF_UTF8);
+    // if (string_len > 0) {
+    //     return c.PyUnicode_FromStringAndSize(&string_val[0], @intCast(string_len - 1)); // the minus one lmao
+    // }
 
     var int64_val: i64 = 0;
     if (c.enif_get_int64(env, term, &int64_val) != 0) {
@@ -82,6 +83,19 @@ pub fn erl_term_to_py_obj(env: NifEnv, term: NifTerm) !PyObject {
     return Error.UnknownType;
 }
 
+
+pub fn py_bytes_to_erl_binary(env: NifEnv, bytes: [*c]c.PyObject) !NifTerm {
+    const size: usize = @intCast(c.PyBytes_Size(bytes));
+    const data = c.PyBytes_AsString(bytes)[0..size];
+
+    var out_bin: c.ErlNifBinary = undefined;
+    if (c.enif_alloc_binary(size, &out_bin) == 0) return Error.ErlangError;
+
+    @memcpy(out_bin.data[0..size], data);
+
+    return c.enif_make_binary(env, &out_bin);
+}
+
 pub fn py_obj_to_erl_term(env: NifEnv, obj: PyObject) !NifTerm {
     if (c.PyBool_Check(obj) != 0) {
         if (obj == @as(PyObject, @ptrCast(&c._Py_TrueStruct))) {
@@ -111,14 +125,7 @@ pub fn py_obj_to_erl_term(env: NifEnv, obj: PyObject) !NifTerm {
     }
 
     if (c.PyBytes_Check(obj) != 0) {
-        const size: usize = @intCast(c.PyBytes_Size(obj));
-        const data = c.PyBytes_AsString(obj)[0..size];
-        var bin: c.ErlNifBinary = undefined;
-        if (c.enif_alloc_binary(size, &bin) == 0) {
-            return c.enif_make_atom(env, "error");
-        }
-        @memcpy(bin.data[0..size], data);
-        return c.enif_make_binary(env, &bin);
+        return py_bytes_to_erl_binary(env, obj);
     }
 
     return Error.UnknownType;

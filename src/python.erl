@@ -1,12 +1,20 @@
 -module(python).
 -on_load(init/0).
--export([marshal/1, unmarshal/1, bin_to_py_bytestring/1]).
+-export([marshal/1, unmarshal/1, eval/2, eval/1, compile/1, bin_to_py_bytestring/1]).
 
 init() ->
     erlang:load_nif("./zig-out/lib/libpython-nif", 0).
 
 marshal(_Term) ->
     erlang:nif_error(not_loaded).
+
+compile(_String) ->
+    erlang:nif_error(not_loaded).
+
+eval(_Bin, _Dict) ->
+    erlang:nif_error(not_loaded).
+
+eval(Bin) -> eval(Bin, <<123,48>>).
 
 unmarshal(_Bin) ->
     erlang:nif_error(not_loaded).
