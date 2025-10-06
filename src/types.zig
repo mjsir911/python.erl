@@ -63,8 +63,8 @@ pub fn erl_term_to_py_obj(env: NifEnv, term: NifTerm) !PyObject {
             return Error.StrangeListLength;
         }
 
-        const py_list = c.PyList_New(length);
-        if (py_list == null) return Error.PythonError;
+        const py_list = c.PyList_New(length) orelse return Error.PythonError;
+        errdefer c.Py_DecRef(py_list);
 
         var head: NifTerm = undefined;
         var tail: NifTerm = undefined;
@@ -72,8 +72,6 @@ pub fn erl_term_to_py_obj(env: NifEnv, term: NifTerm) !PyObject {
         var i: usize = 0;
         while (c.enif_get_list_cell(env, list, &head, &tail) != 0) {
             const py_item = try erl_term_to_py_obj(env, head);
-                // c.Py_DecRef(py_list);
-            // PyList_SetItem steals ref
             _ = c.PyList_SetItem(py_list, @intCast(i), py_item);
             i += 1;
             list = tail;
