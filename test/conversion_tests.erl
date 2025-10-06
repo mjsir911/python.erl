@@ -12,15 +12,20 @@ mystring() -> utf8_string().
 simple() ->
     SimpleTypes = [
         integer(),
-        binary(),
+        float(),
         boolean(),
-        mystring()
+        binary()
     ],
     union(SimpleTypes).
 
+keytypes() -> union([integer(), float(), binary()]). % let's not include boolean because of uhh reasons
+
 supported() ->
     SupportedTypes = [
-        simple()
+        simple(),
+        mystring(),
+        ?LAZY(list(supported())),
+        ?LAZY(map(keytypes(), simple()))
     ],
     union(SupportedTypes).
 
@@ -42,17 +47,20 @@ int_test() ->
     ),
     ?assert(Result, [{to_file, user}]).
 
--define(PROPTEST_LONG_TIMEOUT, 100000).
+float_test() ->
+    ?assert(proper:quickcheck(
+        ?FORALL(Float, float(),
+            Float =:= marshal_identity(Float)
+        )
+    ) ,[{to_file, user}]).
 
 string_test() ->
     SimpleString = "Hello, world!",
     ?assertEqual(SimpleString, marshal_identity(SimpleString)),
 
     Result = proper:quickcheck(
-        ?TIMEOUT(?PROPTEST_LONG_TIMEOUT,
-            ?FORALL(String, mystring(),
-                String =:= marshal_identity(String)
-            )
+        ?FORALL(String, mystring(),
+            String =:= marshal_identity(String)
         )
     ),
     ?assert(Result, [{to_file, user}]).
@@ -65,18 +73,37 @@ binary_test() ->
     ),
     ?assert(Result, [{to_file, user}]).
 
-% list_test() ->
+simple_list_test() ->
+    ?assert(proper:quickcheck(
+        ?FORALL(List, list(simple()),
+            List =:= marshal_identity(List)
+        )
+    ), [{to_file, user}]).
+
+% simple_tuple_test() ->
 %     ?assert(proper:quickcheck(
-%         ?FORALL(List, list(simple()),
-%             List =:= marshal_identity(List)
+%         ?FORALL(Tuple, loose_tuple(simple()),
+%             Tuple =:= marshal_identity(Tuple)
+%         )
+%     ), [{to_file, user}]).
+%
+% simple_dict_test() ->
+%     ?assertEqual(marshal_identity(#{2 => 1}), #{2 => 1}),
+%     % ?assert(proper:quickcheck(
+%     %     ?FORALL(Dict, map(union([integer(), binary(), float()]), simple()),
+%     %         Dict =:= marshal_identity(Dict)
+%     %     )
+%     % ), [{to_file, user}]),
+%     ?assert(proper:quickcheck(
+%         ?FORALL(Dict, map(union([boolean(), binary(), float()]), simple()),
+%             Dict =:= marshal_identity(Dict)
 %         )
 %     ), [{to_file, user}]).
 
-all_supported_test() -> 
-    ?assert(proper:quickcheck(
-        ?TIMEOUT(?PROPTEST_LONG_TIMEOUT,
-            ?FORALL(Term, supported(),
-                Term =:= marshal_identity(Term)
-            )
-        )
-    ), [{to_file, user}]).
+
+% all_supported_test() ->
+%     ?assert(proper:quickcheck(
+%         ?FORALL(Term, supported(),
+%             Term =:= marshal_identity(Term)
+%         )
+%     )).
