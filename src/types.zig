@@ -6,7 +6,7 @@ const c = @cImport({
     @cInclude("marshal.h");
 });
 
-const NifEnv = *c.ErlNifEnv;
+const NifEnv = ?*c.ErlNifEnv;
 const NifTerm = c.ERL_NIF_TERM;
 const PyObject = *c.PyObject;
 

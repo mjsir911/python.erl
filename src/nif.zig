@@ -32,7 +32,7 @@ fn nif_marshal(env: NifEnv, argc: c_int, argv: [*c] const NifTerm) callconv(.C) 
     const state = c.PyGILState_Ensure();
     defer c.PyGILState_Release(state);
 
-    const py_obj = types.erl_term_to_py_obj(env.?, argv[0]) catch |err| return make_error_from_zig(env, err);
+    const py_obj = types.erl_term_to_py_obj(env, argv[0]) catch |err| return make_error_from_zig(env, err);
     defer c.Py_DecRef(py_obj);
 
     const marshaled = c.PyMarshal_WriteObjectToString(py_obj, c.Py_MARSHAL_VERSION);
@@ -67,7 +67,7 @@ fn nif_unmarshal(env: NifEnv, argc: c_int, argv: [*c] const NifTerm) callconv(.C
     if (obj == null) return make_error(env, "binary_error");
     defer c.Py_DecRef(obj);
 
-    return types.py_obj_to_erl_term(env.?, obj) catch |err| return make_error_from_zig(env, err);
+    return types.py_obj_to_erl_term(env, obj) catch |err| return make_error_from_zig(env, err);
 }
 
 
