@@ -29,8 +29,8 @@ pub fn make_error_from_zig(env: NifEnv, err: anyerror) NifTerm {
 fn nif_marshal(env: NifEnv, argc: c_int, argv: [*c] const NifTerm) callconv(.C) NifTerm {
     if (argc != 1) return c.enif_make_badarg(env);
 
-    c.Py_Initialize();
-    defer c.Py_Finalize();
+    const state = c.PyGILState_Ensure();
+    defer c.PyGILState_Release(state);
 
     const py_obj = types.erl_term_to_py_obj(env.?, argv[0]) catch |err| return make_error_from_zig(env, err);
     defer c.Py_DecRef(py_obj);
@@ -60,8 +60,8 @@ fn nif_unmarshal(env: NifEnv, argc: c_int, argv: [*c] const NifTerm) callconv(.C
         return c.enif_make_badarg(env);
     }
 
-    c.Py_Initialize();
-    defer c.Py_Finalize();
+    const state = c.PyGILState_Ensure();
+    defer c.PyGILState_Release(state);
 
     const obj = c.PyMarshal_ReadObjectFromString(bin.data, @intCast(bin.size));
     if (obj == null) return make_error(env, "binary_error");
@@ -82,16 +82,14 @@ export fn nif_load(env: NifEnv, priv: [*c]?*anyopaque, info: NifTerm) callconv(.
     _ = env;
     _ = priv;
     _ = info;
+    c.Py_Initialize();
     return 0;
 }
 
 export fn nif_unload(env: NifEnv, priv: ?*anyopaque) void {
     _ = env;
     _ = priv;
-    // just in case, shouldn't happen
-    if (c.Py_IsInitialized() != 0) {
-        c.Py_Finalize();
-    }
+    c.Py_Finalize();
 }
 
 export fn nif_init() *const c.ErlNifEntry {
