@@ -1,0 +1,45 @@
+-module(python).
+-on_load(init/0).
+-export([marshal/1, unmarshal/1, eval/2, eval/1, compile/1, bin_to_py_bytestring/1]).
+
+init() ->
+    erlang:load_nif("./zig-out/lib/libpython-nif", 0).
+
+marshal(_Term) ->
+    erlang:nif_error(not_loaded).
+
+compile(_String) ->
+    erlang:nif_error(not_loaded).
+
+pickle(Term) ->
+    Globals = marshal(#{term => Term}),
+    Code = compile(<<"__import__('pickle').dumps(term)">>),
+    eval(Code, Globals).
+
+unpickle(Bin) ->
+    Globals = marshal(#{bin_ => Bin}),
+    Code = compile(<<"__import__('pickle').loads(bin_)">>),
+    eval(Code, Globals).
+
+
+
+eval_nopickle(_Bin, Dict) ->
+    erlang:nif_error(not_loaded).
+
+eval(_Bin, _Dict) ->
+    erlang:nif_error(not_loaded).
+
+eval(Bin) -> eval(Bin, <<123,48>>).
+
+unmarshal(_Bin) ->
+    erlang:nif_error(not_loaded).
+
+
+bin_to_py_bytestring(Bin) when is_binary(Bin) ->
+    Bytes = binary:bin_to_list(Bin),
+    String = lists:map(fun(Byte) ->
+        io_lib:format("\\x~2.16.0B", [Byte])
+    end, Bytes),
+    Str = lists:flatten(["b'" | String] ++ "'"),
+    io:format("~s~n", [Str]),
+    Str.

@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const lib = b.addSharedLibrary(.{
-        .name = "erlang-python",
+        .name = "python-nif",
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("src/nif.zig"),

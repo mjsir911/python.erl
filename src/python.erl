@@ -1,9 +1,9 @@
--module(erlang_python).
+-module(python).
 -on_load(init/0).
 -export([marshal/1, unmarshal/1, bin_to_py_bytestring/1]).
 
 init() ->
-    erlang:load_nif("./zig-out/lib/liberlang-python", 0).
+    erlang:load_nif("./zig-out/lib/libpython-nif", 0).
 
 marshal(_Term) ->
     erlang:nif_error(not_loaded).

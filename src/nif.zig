@@ -98,7 +98,7 @@ export fn nif_init() *const c.ErlNifEntry {
     return &c.ErlNifEntry{
         .major = 2,
         .minor = 16,
-        .name = "erlang_python",
+        .name = "python",
         .num_of_funcs = nif_funcs.len,
         .funcs = @constCast(&nif_funcs[0]),
         .load = nif_load,

@@ -4,7 +4,7 @@
 -compile(export_all).
 
 
-marshal_identity(Term) -> erlang_python:unmarshal(erlang_python:marshal(Term)).
+marshal_identity(Term) -> python:unmarshal(python:marshal(Term)).
 
 mystring() -> utf8_string().
 
@@ -26,8 +26,8 @@ supported() ->
 
 
 bool_test() ->
-    _ = erlang_python:marshal(true),
-    _ = erlang_python:marshal(false),
+    _ = python:marshal(true),
+    _ = python:marshal(false),
     ?assertEqual(true, marshal_identity(true), [{to_file, user}]),
     ?assertEqual(false, marshal_identity(false), [{to_file, user}]).
 
